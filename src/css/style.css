@@ -1,0 +1,47 @@
+body {
+  font-family: monospace;
+  padding-top: 100;
+  width: 900;
+  margin: 0 auto;
+  background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+}
+
+#defaultCanvas0 {
+  padding: 0;
+  margin: 0 auto;
+  display: block;
+  vertical-align: top;
+  border: 1px solid black;
+
+}
+
+.btn-container {
+  width: 620;
+  margin: 0 auto;
+
+}
+
+.btn {
+  font-size: 24px;
+  width: 120px;
+  margin-right: 20;
+  display: inline-block;
+  padding: 10;
+  border: 1px solid black;
+}
+
+.btn:hover{
+   background-color: hsla(142, 92%, 74%, 0.63);
+   cursor: hand;
+}
+
+/*.effectDisplay {
+  margin: 0;
+  padding: 5;
+  width: 380;
+  height: 480;
+  vertical-align: top;
+  display: inline-block;
+  border: 1px solid black;
+
+}*/
