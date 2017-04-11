@@ -13,7 +13,7 @@ function setup() {
   //create effect buttons
   var btnContainer = createP('').addClass('btn-container')
   var e1 = createP('Effect 1').addClass('btn').id('effect1').parent(btnContainer)
-  var e2 = createP('Effect 2').addClass('btn').id('effect2').parent(btnContainer)
+  var e2 = createP('snap!').addClass('btn').id('effect2').parent(btnContainer)
 
   //attch effects to buttons
   e1.mousePressed(streamBlue)
@@ -32,7 +32,7 @@ function streamBlue(){
 function takeSnap(){
   currentEffect = 'takeSnap'
   tint(color('#e36900'))
-  snaps.push(video.get())
+  snaps.push(videoFeed.get())
   image(snaps[snaps.length - 1], 0, 0)
 }
 
@@ -41,7 +41,7 @@ function draw() {
 
 if(currentEffect === 'streamBlue') {
   tint('#9e2165')
-  image(video, 0 ,0)
+  image(videoFeed, 0 ,0)
 }
 
 
