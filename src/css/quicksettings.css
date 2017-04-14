@@ -2,8 +2,9 @@
 
 .qs_main {
   /*background-color: #dddddd;*/
-  text-align: left;
+  text-align: center;
   position: absolute;
+  padding-bottom: 20px;
   width: 200px;
   font: 12px monospace;
   box-shadow: 5px 5px 8px rgba(0, 0, 0, 0.35);

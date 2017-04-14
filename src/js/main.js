@@ -3,18 +3,22 @@ var videoScale
 var snaps = []
 var multiSnaps = []
 var multiFrameCounter = 0
-var currentEffectList = ['none', 'emojify', 'emojiFaceSwap', 'emojiColorSwap', 'multiFrame']
+var currentEffectList = ['choose effect!', 'emojify', 'emojiFaceSwap', 'emojiColorSwap', 'multiFrame']
 var selectedEffect
-var emoji = ''
 var emojiPixel
 var mainGui
 var infoGui
-
 var bgroundColor
-var fontSize
 
+//tracking
 var colorTracker
 var trackedFrame
+var faceTracker
+var trackedFace 
+
+//gif
+var gif
+var gifRecording = false
 
 function setup() {
   videoScale = 1
@@ -22,61 +26,66 @@ function setup() {
   pixelDensity(1) //disregard retina display
 
   var canvas = createCanvas(640,480)
+  console.log(canvas);
   videoFeed = createCapture(VIDEO)
   videoFeed.size(640/videoScale, 480/videoScale).id('myVideo')
-  // videoFeed.hide()
-  videoFeed.position(-1000,-1000) //hide original source
+  videoFeed.position(-1000,-1000) //hide original source instead of // videoFeed.hide()
 
-  //center it
+  infoGui = QuickSettings.create(windowWidth/2 - 330, 750, "Info✌🏽")
+             .setWidth(660)
+             .addHTML("Created by"," <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the <a href='https://www.recurse.com/' target='_blank'>Recurse Center</a> 🐙. Don't feel comfortable turning on camera? No worries, here is the Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>. No funny buisness going on here 😃💯")
+             .addImage("Emojify", "/src/img/emojify2.png")
+             .addImage("EmojiColorSwap", "/src/img/emojify1.png")
+             .addImage("EmojiFaceSwap", "/src/img/emojify2.png")
+
   mainGui = QuickSettings.create(windowWidth/2 - 330, 10, "REM✌🏽")
              .setWidth(660)
-             .addDropDown("💥 Enable webcam first & choose a video effect 💥", currentEffectList, function(val){changeEffect(val.value)})
+             .addDropDown("💥  Allow webcam access first and choose a video effect  💥", currentEffectList, function(val){changeEffect(val.value)})
              .addElement("", canvas.elt)
              .addButton("💾 Save Photo", saveImage)
-             .addButton("📹 Save GIF", saveImage)
-             //add a slider
+             .addButton("📹 Record GIF", recordGif)
              .addButton("🚀 Upload GIF to IMGUR", saveImage)
-             .addHTML("Info","Created by <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the <a href='https://www.recurse.com/' target='_blank'>Recurse Center</a> 🐙. Don't feel comfortable turning on camera? No worries, here is the Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>. No funny buisness going on here 😃💯")
-
-//examples ui double tap to see examples
 
 
+
+
+//Color tracking
  colorTracker = new tracking.ColorTracker(['magenta', 'yellow'])
- //tracking
- colorTracker.on('track', startTracking)
+ colorTracker.on('track', startColorTracking)
+ if(videoFeed) { tracking.track('#myVideo', colorTracker) }
 
- if(videoFeed) tracking.track('#myVideo', colorTracker)
+ //Face tracking
+ faceTracker = new tracking.ObjectTracker('face')
+ faceTracker.setInitialScale(4);
+ faceTracker.setStepSize(2);
+ faceTracker.setEdgesDensity(0.1);
+ faceTracker.on('track', startFaceTracking)
+ if(videoFeed) { tracking.track('#myvideo', faceTracker, { camera: true }) }
 
-
-
-// var img = document.getElementById('img');
-// var faceTracker = new tracking.ObjectTracker(['face', 'eye', 'mouth'])
-// faceTracker.setStepSize(1.7)
-//
-// faceTracker.on('track', function(event) {
-//   event.data.forEach(function(frame) {
-//     drawRect(frame)
-//   })
-// })
-//
-//
-// tracking.track('#myvideo', faceTracker)
-
+ //prepare for gif recording
+ setupGif()
 
 }//SETUP
 
-function startTracking(event) {
+function startColorTracking(event) {
  if (event.data.length === 0) {
    // No colors were detected in this frame.
  } else if (selectedEffect === 'emojiColorSwap'){
    event.data.forEach(function(frame) {
      trackedFrame = frame
-    //  drawEmoji(frame)
    })
  }
 }
 
-
+function startFaceTracking(event) {
+ if (event.data.length === 0) {
+   // No colors were detected in this frame.
+ } else if (selectedEffect === 'emojiFaceSwap'){
+   event.data.forEach(function(frame) {
+     trackedFace = frame
+   })
+ }
+}
 
 function saveImage() {
   saveCanvas(canvas, 'myCanvas', 'png');
@@ -88,10 +97,25 @@ function changeEffect(value){
   selectedEffect = value
 }
 
-function takeSnap(){
-  selectedEffect = 'takeSnap'
-  snaps.push(videoFeed.get())
-  image(snaps[snaps.length - 1], 0, 0)
+function setupGif() {
+  gif = new GIF({
+    workers: 2,
+    quality: 10
+  })
+
+  gif.on('finished', function(blob) {
+    window.open(URL.createObjectURL(blob))
+    setupGif()
+  })
+}
+
+function recordGif(){
+  gifRecording = !gifRecording;
+  console.log('gif recording is:', gifRecording);
+  if (!gifRecording) {
+    console.log('bout to render');
+    gif.render();
+  }
 }
 
 
@@ -111,10 +135,10 @@ function draw() {
       var randEmoji
       if(trackedFrame) {
 
-        if(trackedFrame > 150) {
-          fontSize = 150
+        if(trackedFrame.width > 200) {
+          fontSize = 200
         } else {
-          fontSize = (trackedFrame.width + trackedFrame.height) / 2
+          fontSize = trackedFrame.width + trackedFrame.height
         }
 
         if(trackedFrame.color === 'yellow') {
@@ -129,7 +153,20 @@ function draw() {
     }
   }
 
+  if(selectedEffect === 'emojiFaceSwap') {
 
+      push()
+      scale(-1,1);
+      image(videoFeed.get(), -width, 0)
+      pop()
+
+      var fontSize
+      var randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
+
+      text( randEmoji , width - trackedFace.x - trackedFace.width, trackedFace.y + 150)
+      textSize(200)
+      // rect(width - trackedFace.x - trackedFace.width, trackedFace.y , trackedFace.height, trackedFace.width)
+  }
 
   if(selectedEffect === 'emojify' && videoFeed) {
 
@@ -170,7 +207,6 @@ function draw() {
 
       fontSize = 12
 
-      // if(emojiPixel) { emojiPixel.remove()}
       emojiPixel = text(emoji, x * videoScale, y * videoScale + fontSize)
       textSize(fontSize)
 
@@ -179,25 +215,37 @@ function draw() {
 
   }//EMOJIFY
 
-  if(selectedEffect === 'multiFrame' && videoFeed) {
-    noTint()
-    multiSnaps[multiFrameCounter] = videoFeed.get()
-    multiFrameCounter ++
-    //41 total no of multi frames possible
-    if(multiFrameCounter == 41) { multiFrameCounter = 0}
-    var w = width / 4
-        h = height / 4
-        x = 0
-        y = 0
-    for (var i = 0; i < multiSnaps.length; i++) {
-      var index = (i + frameCount) % multiSnaps.length
-      image(multiSnaps[index], x, y, w, h)
-      //move to the next frame
-      x += w
-      if (x > width) {
-        x = 0
-        y = y + h
-      }
-    }
+
+  if (gifRecording && frameCount % 3 == 0) {
+    // push()
+    // scale(-1,1)
+    // image(videoFeed.get(), -width, 0)
+    // pop()
+    console.log(frameCount);
+    gif.addFrame(canvas, {delay: 1, copy: true})
   }
+
+  // if(selectedEffect === 'multiFrame' && videoFeed) {
+  //   noTint()
+  //   multiSnaps[multiFrameCounter] = videoFeed.get()
+  //   multiFrameCounter ++
+  //   //41 total no of multi frames possible
+  //   if(multiFrameCounter == 41) { multiFrameCounter = 0}
+  //   var w = width / 4
+  //       h = height / 4
+  //       x = 0
+  //       y = 0
+  //   for (var i = 0; i < multiSnaps.length; i++) {
+  //     var index = (i + frameCount) % multiSnaps.length
+  //     image(multiSnaps[index], x, y, w, h)
+  //     //move to the next frame
+  //     x += w
+  //     if (x > width) {
+  //       x = 0
+  //       y = y + h
+  //     }
+  //   }
+  // }
+  //
+
 }// DRAW
