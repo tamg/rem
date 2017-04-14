@@ -14,11 +14,12 @@ var bgroundColor
 var colorTracker
 var trackedFrame
 var faceTracker
-var trackedFace 
+var trackedFace
 
 //gif
 var gif
 var gifRecording = false
+var gifBlob
 
 function setup() {
   videoScale = 1
@@ -26,7 +27,6 @@ function setup() {
   pixelDensity(1) //disregard retina display
 
   var canvas = createCanvas(640,480)
-  console.log(canvas);
   videoFeed = createCapture(VIDEO)
   videoFeed.size(640/videoScale, 480/videoScale).id('myVideo')
   videoFeed.position(-1000,-1000) //hide original source instead of // videoFeed.hide()
@@ -100,11 +100,13 @@ function changeEffect(value){
 function setupGif() {
   gif = new GIF({
     workers: 2,
-    quality: 10
+    quality: 10,
+    workerScript: '/libraries/gif.worker.js'
   })
 
   gif.on('finished', function(blob) {
-    window.open(URL.createObjectURL(blob))
+    // window.open(URL.createObjectURL(blob))
+    gifBlob = URL.createObjectURL(blob)
     setupGif()
   })
 }
@@ -115,6 +117,12 @@ function recordGif(){
   if (!gifRecording) {
     console.log('bout to render');
     gif.render();
+  }
+}
+
+function displayGif {
+  if(!gifRecording && gifBlob) {
+  createImg(gifBlob)
   }
 }
 
@@ -154,18 +162,19 @@ function draw() {
   }
 
   if(selectedEffect === 'emojiFaceSwap') {
-
       push()
       scale(-1,1);
       image(videoFeed.get(), -width, 0)
       pop()
 
-      var fontSize
-      var randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
+      if(trackedFace) {
+        var fontSize
+        var randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
 
-      text( randEmoji , width - trackedFace.x - trackedFace.width, trackedFace.y + 150)
-      textSize(200)
-      // rect(width - trackedFace.x - trackedFace.width, trackedFace.y , trackedFace.height, trackedFace.width)
+        text( randEmoji , width - trackedFace.x - trackedFace.width, trackedFace.y + 150)
+        textSize(trackedFace.width + 50)
+        // rect(width - trackedFace.x - trackedFace.width, trackedFace.y , trackedFace.height, trackedFace.width)
+    }
   }
 
   if(selectedEffect === 'emojify' && videoFeed) {
@@ -221,9 +230,11 @@ function draw() {
     // scale(-1,1)
     // image(videoFeed.get(), -width, 0)
     // pop()
-    console.log(frameCount);
+    // console.log(frameCount);
     gif.addFrame(canvas, {delay: 1, copy: true})
   }
+
+
 
   // if(selectedEffect === 'multiFrame' && videoFeed) {
   //   noTint()
