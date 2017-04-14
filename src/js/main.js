@@ -1,60 +1,51 @@
 var videoFeed
-var videoContainer
-var videoScale = 16
-var effectDisplay
-var w
-var h
+var videoScale
 var snaps = []
-var tintColor = '#00ddff';
 var multiSnaps = []
 var multiFrameCounter = 0
-var currentEffect = ['none', 'mirror', 'emojify', 'emojiHead', 'multiFrame']
+var currentEffectList = ['none', 'emojify', 'emojiFaceSwap', 'emojiColorSwap', 'multiFrame']
+var selectedEffect
 var emoji = ''
-var textEmoji
+var emojiPixel
 var mainGui
-var outputGui
+var infoGui
 
 var bgroundColor
-var fontSize = 15
+var fontSize
+
+var colorTracker
+var trackedFrame
 
 function setup() {
-  w = windowWidth
-  h = windowHeight
-  bgroundColor = '#a3f9c3'
+  videoScale = 1
+  bgroundColor = 'white'
   pixelDensity(1) //disregard retina display
 
   var canvas = createCanvas(640,480)
   videoFeed = createCapture(VIDEO)
   videoFeed.size(640/videoScale, 480/videoScale).id('myVideo')
   // videoFeed.hide()
+  videoFeed.position(-1000,-1000) //hide original source
 
   //center it
-  mainGui = QuickSettings.create(w/2 - 330, 10, "REM✌🏽")
+  mainGui = QuickSettings.create(windowWidth/2 - 330, 10, "REM✌🏽")
              .setWidth(660)
-             .addDropDown("💥 Enable webcam first & choose a video effect 💥", currentEffect, function(val){changeEffect(val.value)})
+             .addDropDown("💥 Enable webcam first & choose a video effect 💥", currentEffectList, function(val){changeEffect(val.value)})
              .addElement("", canvas.elt)
              .addButton("💾 Save Photo", saveImage)
              .addButton("📹 Save GIF", saveImage)
              //add a slider
              .addButton("🚀 Upload GIF to IMGUR", saveImage)
-             .addHTML("Info","Created by <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the Recurse Center 🐙. Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>.")
+             .addHTML("Info","Created by <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the <a href='https://www.recurse.com/' target='_blank'>Recurse Center</a> 🐙. Don't feel comfortable turning on camera? No worries, here is the Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>. No funny buisness going on here 😃💯")
 
 //examples ui double tap to see examples
 
 
- colorTracker = new tracking.ColorTracker(['magenta', 'cyan', 'yellow'])
+ colorTracker = new tracking.ColorTracker(['magenta', 'yellow'])
  //tracking
- colorTracker.on('track', function(event) {
-   if (event.data.length === 0) {
-     // No colors were detected in this frame.
-   } else {
-     event.data.forEach(function(frame) {
-       drawRect(frame)
-     })
-   }
- })
+ colorTracker.on('track', startTracking)
 
-tracking.track('#myVideo', colorTracker)
+ if(videoFeed) tracking.track('#myVideo', colorTracker)
 
 
 
@@ -74,34 +65,31 @@ tracking.track('#myVideo', colorTracker)
 
 }//SETUP
 
-
-// function drawR(x, y, w, h) {
-//   var rect = document.createElement('div')
-//   document.querySelector('.demo-container').appendChild(rect)
-//   rect.classList.add('rect')
-//   rect.style.width = w + 'px'
-//   rect.style.height = h + 'px'
-//   rect.style.left = (img.offsetLeft + x) + 'px'
-//   rect.style.top = (img.offsetTop + y) + 'px'
-// }
-
-
-function drawRect(frame) {
-  noFill()
-  stroke(frame.color)
-  rect(frame.x, frame.y, frame.height, frame.width)
+function startTracking(event) {
+ if (event.data.length === 0) {
+   // No colors were detected in this frame.
+ } else if (selectedEffect === 'emojiColorSwap'){
+   event.data.forEach(function(frame) {
+     trackedFrame = frame
+    //  drawEmoji(frame)
+   })
+ }
 }
+
+
 
 function saveImage() {
   saveCanvas(canvas, 'myCanvas', 'png');
 }
 
 function changeEffect(value){
-  currentEffect = value
+  // if(value == 'emojify') { videoScale = 16 }
+  // videoFeed.size(640/videoScale, 480/videoScale)
+  selectedEffect = value
 }
 
 function takeSnap(){
-  currentEffect = 'takeSnap'
+  selectedEffect = 'takeSnap'
   snaps.push(videoFeed.get())
   image(snaps[snaps.length - 1], 0, 0)
 }
@@ -112,9 +100,38 @@ function draw() {
 
   background(bgroundColor)
 
-  // if(!videoFeed)
+  if(selectedEffect === 'emojiColorSwap') {
 
-  if(currentEffect === 'emojify' && videoFeed) {
+      push()
+      scale(-1,1);
+      image(videoFeed.get(), -width, 0)
+      pop()
+
+      var fontSize
+      var randEmoji
+      if(trackedFrame) {
+
+        if(trackedFrame > 150) {
+          fontSize = 150
+        } else {
+          fontSize = (trackedFrame.width + trackedFrame.height) / 2
+        }
+
+        if(trackedFrame.color === 'yellow') {
+          randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
+        } else if(trackedFrame.color === 'magenta') {
+          randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
+        }
+
+        text( randEmoji, width - trackedFrame.x - 150, trackedFrame.y + 150)
+        textSize(fontSize)
+        // rect(trackedFrame.x, trackedFrame.y, trackedFrame.height, trackedFrame.width)
+    }
+  }
+
+
+
+  if(selectedEffect === 'emojify' && videoFeed) {
 
     videoFeed.loadPixels()
     loadPixels()
@@ -130,13 +147,13 @@ function draw() {
         var bLevel = (r + g + b)/3 //brightnessLevel
 
           if (bLevel < 25) {
-            emoji = '🍊'  //🌚
+            emoji = '😆'  //🌚
           } else if (bLevel >=25 && bLevel < 50) {
             emoji = '👽' //💩
           } else if (bLevel >=50 && bLevel < 75) {
             emoji = '🙊'
           } else if (bLevel >=75 && bLevel < 100) {
-            emoji = '🐨'
+            emoji = '💯'
           } else if (bLevel >=100 && bLevel < 125) {
             emoji = '🙈'
           } else if (bLevel >=125 && bLevel < 150) {
@@ -151,8 +168,10 @@ function draw() {
             emoji = '🔥'
           }
 
-      // if(textEmoji) { textEmoji.remove()}
-      textEmoji = text(emoji, x * videoScale, y * videoScale + fontSize)
+      fontSize = 12
+
+      // if(emojiPixel) { emojiPixel.remove()}
+      emojiPixel = text(emoji, x * videoScale, y * videoScale + fontSize)
       textSize(fontSize)
 
       } //XPixels
@@ -160,7 +179,7 @@ function draw() {
 
   }//EMOJIFY
 
-  if(currentEffect === 'multiFrame' && videoFeed) {
+  if(selectedEffect === 'multiFrame' && videoFeed) {
     noTint()
     multiSnaps[multiFrameCounter] = videoFeed.get()
     multiFrameCounter ++
@@ -182,15 +201,3 @@ function draw() {
     }
   }
 }// DRAW
-
-
-// tint(random(255),random(255), random(255))
-// mainGui.bindDropDown("designMode", ["on", "off"], document)
-// mainGui.bindColor("backgroundColor", "#ffffff", document.body.style);
-
-
-//black and white mirror
-// pixels[index + 0] = brightness
-// pixels[index + 1] = brightness
-// pixels[index + 2] = brightness
-// pixels[index + 3] = 255//a
