@@ -120,7 +120,7 @@ function recordGif(){
   }
 }
 
-function displayGif {
+function displayGif() {
   if(!gifRecording && gifBlob) {
   createImg(gifBlob)
   }
