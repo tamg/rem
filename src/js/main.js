@@ -1,105 +1,62 @@
-var videoFeed
-var videoScale
-var snaps = []
-var multiSnaps = []
-var multiFrameCounter = 0
-var currentEffectList = ['choose effect!', 'emojify', 'emojiFaceSwap', 'emojiColorSwap', 'multiFrame']
-var selectedEffect
-var emojiPixel
+
+var canvas
 var mainGui
-var infoGui
 var bgroundColor
 
-//tracking
-var colorTracker
-var trackedFrame
-var faceTracker
-var trackedFace
+var videoFeed
+var videoScale
+var emojiPixel
 
-//gif
 var gif
 var gifRecording = false
 var gifBlob
+var gifNumber = 0
 
 function setup() {
-  videoScale = 1
-  bgroundColor = 'white'
   pixelDensity(1) //disregard retina display
+  videoScale = 16 //draw 1/16 the size of the original video
+  bgroundColor = 'white'
 
-  var canvas = createCanvas(640,480)
-  videoFeed = createCapture(VIDEO)
-  videoFeed.size(640/videoScale, 480/videoScale).id('myVideo')
-  videoFeed.position(-1000,-1000) //hide original source instead of // videoFeed.hide()
+  canvas = createCanvas(640,480)
 
-  infoGui = QuickSettings.create(windowWidth/2 - 330, 750, "Info✌🏽")
-             .setWidth(660)
-             .addHTML("Created by"," <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the <a href='https://www.recurse.com/' target='_blank'>Recurse Center</a> 🐙. Don't feel comfortable turning on camera? No worries, here is the Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>. No funny buisness going on here 😃💯")
-             .addImage("Emojify", "/src/img/emojify2.png")
-             .addImage("EmojiColorSwap", "/src/img/emojify1.png")
-             .addImage("EmojiFaceSwap", "/src/img/emojify2.png")
+  //request video media access
+  navigator.mediaDevices.getUserMedia({ audio: false, video: true})
+                        .then(accessGranted)
+                        .catch(error)
 
   mainGui = QuickSettings.create(windowWidth/2 - 330, 10, "REM✌🏽")
              .setWidth(660)
-             .addDropDown("💥  Allow webcam access first and choose a video effect  💥", currentEffectList, function(val){changeEffect(val.value)})
+             .addHTML("💥  Allow webcam access first and emojify yourself!  💥", "Don't feel comfortable turning on camera? No worries, here is the Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>. <br/> No funny buisness going on here 😃 <a href='http://www.tamrat.co/rem-emojifier' target='_blank'>Here are some of the example outputs</a> 💯 Created by <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the <a href='https://www.recurse.com/' target='_blank'>Recurse Center</a> 🐙")
              .addElement("", canvas.elt)
              .addButton("💾 Save Photo", saveImage)
              .addButton("📹 Record GIF", recordGif)
-             .addButton("🚀 Upload GIF to IMGUR", saveImage)
-
-
-
-
-//Color tracking
- colorTracker = new tracking.ColorTracker(['magenta', 'yellow'])
- colorTracker.on('track', startColorTracking)
- if(videoFeed) { tracking.track('#myVideo', colorTracker) }
-
- //Face tracking
- faceTracker = new tracking.ObjectTracker('face')
- faceTracker.setInitialScale(4);
- faceTracker.setStepSize(2);
- faceTracker.setEdgesDensity(0.1);
- faceTracker.on('track', startFaceTracking)
- if(videoFeed) { tracking.track('#myvideo', faceTracker, { camera: true }) }
+             .addHTML("Click Record GIF to start/stop recording and link to the gif will appear down here","")
 
  //prepare for gif recording
  setupGif()
 
 }//SETUP
 
-function startColorTracking(event) {
- if (event.data.length === 0) {
-   // No colors were detected in this frame.
- } else if (selectedEffect === 'emojiColorSwap'){
-   event.data.forEach(function(frame) {
-     trackedFrame = frame
-   })
- }
+function accessGranted(stream) {
+  videoFeed = createCapture(VIDEO)
+  videoFeed.size(640/videoScale, 480/videoScale).id('myVideo')
+  videoFeed.hide()
 }
 
-function startFaceTracking(event) {
- if (event.data.length === 0) {
-   // No colors were detected in this frame.
- } else if (selectedEffect === 'emojiFaceSwap'){
-   event.data.forEach(function(frame) {
-     trackedFace = frame
-   })
- }
+function error(error) {
+  if (error.name === 'PermissionDeniedError') {
+    console.error('Permissions have not been granted to use camera')
+  }
+  console.error('getUserMedia error: ' + error.name, error)
 }
 
 function saveImage() {
-  saveCanvas(canvas, 'myCanvas', 'png');
-}
-
-function changeEffect(value){
-  // if(value == 'emojify') { videoScale = 16 }
-  // videoFeed.size(640/videoScale, 480/videoScale)
-  selectedEffect = value
+  saveCanvas(canvas, 'myCanvas', 'png')
 }
 
 function setupGif() {
   gif = new GIF({
-    workers: 2,
+    workers: 4,
     quality: 10,
     workerScript: '/libraries/gif.worker.js'
   })
@@ -107,6 +64,7 @@ function setupGif() {
   gif.on('finished', function(blob) {
     // window.open(URL.createObjectURL(blob))
     gifBlob = URL.createObjectURL(blob)
+    displayGif(gifBlob)
     setupGif()
   })
 }
@@ -115,74 +73,30 @@ function recordGif(){
   gifRecording = !gifRecording;
   console.log('gif recording is:', gifRecording);
   if (!gifRecording) {
-    console.log('bout to render');
-    gif.render();
+    gif.render()
   }
 }
 
 function displayGif() {
   if(!gifRecording && gifBlob) {
-  createImg(gifBlob)
+    gifNumber++
+    mainGui.addHTML("😎", "<a href='" + gifBlob + "' target='_blank'> Gif Number " + gifNumber + "</a>" )
   }
-}
 
+}
 
 //p5 draw function called everyframe
 function draw() {
 
-  background(bgroundColor)
+  background(bgroundColor) //redraw/clear background every frame
 
-  if(selectedEffect === 'emojiColorSwap') {
+  if(videoFeed) {
 
-      push()
-      scale(-1,1);
-      image(videoFeed.get(), -width, 0)
-      pop()
+    videoFeed.loadPixels() //get pixels from video feed
+    loadPixels() //load canvas pixels
 
-      var fontSize
-      var randEmoji
-      if(trackedFrame) {
-
-        if(trackedFrame.width > 200) {
-          fontSize = 200
-        } else {
-          fontSize = trackedFrame.width + trackedFrame.height
-        }
-
-        if(trackedFrame.color === 'yellow') {
-          randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
-        } else if(trackedFrame.color === 'magenta') {
-          randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
-        }
-
-        text( randEmoji, width - trackedFrame.x - 150, trackedFrame.y + 150)
-        textSize(fontSize)
-        // rect(trackedFrame.x, trackedFrame.y, trackedFrame.height, trackedFrame.width)
-    }
-  }
-
-  if(selectedEffect === 'emojiFaceSwap') {
-      push()
-      scale(-1,1);
-      image(videoFeed.get(), -width, 0)
-      pop()
-
-      if(trackedFace) {
-        var fontSize
-        var randEmoji = random(['😃', '😃','😃', '😃', '😃','😃','😆', '😁'])
-
-        text( randEmoji , width - trackedFace.x - trackedFace.width, trackedFace.y + 150)
-        textSize(trackedFace.width + 50)
-        // rect(width - trackedFace.x - trackedFace.width, trackedFace.y , trackedFace.height, trackedFace.width)
-    }
-  }
-
-  if(selectedEffect === 'emojify' && videoFeed) {
-
-    videoFeed.loadPixels()
-    loadPixels()
-
-    for(var y = 0; y < videoFeed.height; y++) {
+    if(videoFeed.pixels.length) { // Check if videoFeed has loaded
+      for(var y = 0; y < videoFeed.height; y++) {
       for(var x = 0; x < videoFeed.width; x++){
         var index = (videoFeed.width - x + 1 + (y * videoFeed.width))*4 //reverse image for mirror effect
         //1 pixel holds 4 values (rgba)
@@ -214,49 +128,25 @@ function draw() {
             emoji = '🔥'
           }
 
-      fontSize = 12
+      fontSize = 16
 
       emojiPixel = text(emoji, x * videoScale, y * videoScale + fontSize)
       textSize(fontSize)
 
-      } //XPixels
-    } //YPixels
+        } //XPixels
+      } //YPixels
+    } else { // Check if videoFeed has loaded
+      text('loading...😜😘', width/3, height/2)
+      textSize(40)
+    }
 
-  }//EMOJIFY
-
-
-  if (gifRecording && frameCount % 3 == 0) {
-    // push()
-    // scale(-1,1)
-    // image(videoFeed.get(), -width, 0)
-    // pop()
-    // console.log(frameCount);
-    gif.addFrame(canvas, {delay: 1, copy: true})
+  } else { //start applying effect only if video access had been granted
+    text('No Video...😐😡😏', width/3, height/2)
+    textSize(40)
   }
 
-
-
-  // if(selectedEffect === 'multiFrame' && videoFeed) {
-  //   noTint()
-  //   multiSnaps[multiFrameCounter] = videoFeed.get()
-  //   multiFrameCounter ++
-  //   //41 total no of multi frames possible
-  //   if(multiFrameCounter == 41) { multiFrameCounter = 0}
-  //   var w = width / 4
-  //       h = height / 4
-  //       x = 0
-  //       y = 0
-  //   for (var i = 0; i < multiSnaps.length; i++) {
-  //     var index = (i + frameCount) % multiSnaps.length
-  //     image(multiSnaps[index], x, y, w, h)
-  //     //move to the next frame
-  //     x += w
-  //     if (x > width) {
-  //       x = 0
-  //       y = y + h
-  //     }
-  //   }
-  // }
-  //
+  if (gifRecording && frameCount % 3 == 0) { //start adding gif frames to the current recording
+    gif.addFrame(canvas, {delay: 1, copy: true})
+  }
 
 }// DRAW
