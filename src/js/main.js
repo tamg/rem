@@ -1,5 +1,4 @@
 
-var canvas
 var mainGui
 var bgroundColor
 
@@ -17,7 +16,7 @@ function setup() {
   videoScale = 16 //draw 1/16 the size of the original video
   bgroundColor = 'white'
 
-  canvas = createCanvas(640,480)
+  var canvas = createCanvas(640,480)
 
   //request video media access
   navigator.mediaDevices.getUserMedia({ audio: false, video: true})
