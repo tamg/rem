@@ -61,9 +61,11 @@ function setupGif() {
   })
 
   gif.on('progress', function (p) {
-    var percentage = (Math.round(p * 100)) + "%"
-    if(p !== undefined) {
-      mainGui.setHTML("status", "<p style=' color: red; fontSize: 20'> Saving..." + percentage + "</P>")
+    if(mainGui._controls.status) {
+      var percentage = (Math.round(p * 100)) + "%"
+      if(p !== undefined) {
+        mainGui.setValue("status", "<p style=' color: red; fontSize: 12;'> Saving Gif..." + percentage + "</P>")
+      }
     }
   })
 
@@ -76,15 +78,15 @@ function setupGif() {
 }
 
 function recordGif(){
-  gifRecording = !gifRecording
-
-  if(mainGui._controls.status) {//ui message
-    mainGui.setHTML("status", "<p style=' color: red; fontSize: 30;'> Recording...</P>")
+  if(mainGui._controls.status) { //update ui of current recording status
+    mainGui.setValue("status", "<p style=' color: red; fontSize: 12'> Recording...</P>")
   } else {
-    mainGui.addHTML("status", "<p style=' color: red; fontSize: 30;'> Recording...</P>")
+    mainGui.addHTML("status", "<p style=' color: red; fontSize: 12'> Recording...</P>")
   }
 
-  if (!gifRecording) { //start rendering when button clicked again
+  gifRecording = !gifRecording
+
+  if (!gifRecording) {
     gif.render()
   }
 }
@@ -92,7 +94,7 @@ function recordGif(){
 function displayGif() {
   if(!gifRecording && gifBlob) {
     gifNumber++
-    mainGui.setHTML("status", "<p style=' color: red; fontSize: 30;'> Done! </P>")
+    mainGui.setValue("status", "<p style=' color: red; fontSize: 12'> Done! </P>")
     mainGui.addHTML("😎", "<a href='" + gifBlob + "' target='_blank'> Gif Number " + gifNumber + "</a>" )
   }
 

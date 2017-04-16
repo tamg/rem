@@ -1,6 +1,6 @@
-# [Demo](https://tamg.github.io/rem/) 
+# [Demo](https://tamg.github.io/rem/)
 
-<img src="/src/img/screenshot.png" alt="alt text" width="600" height="400">
+<img src="/src/img/screenshot.png" alt="alt text" width="900">
 
 * **Rem** is a simple tool that takes your webcam video feed and redraws it on an HTML canvas using emoji as pixels 😎!
 * At any point you can decide to download either a photo or record a gif of your emojified video 💯.
