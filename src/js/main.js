@@ -57,7 +57,7 @@ function setupGif() {
   gif = new GIF({
     workers: 4,
     quality: 10,
-    workerScript: '/libraries/gif.worker.js'
+    workerScript: '../../libraries/gif.worker.js'
   })
 
   gif.on('progress', function (p) {
