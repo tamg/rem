@@ -28,8 +28,8 @@ function setup() {
              .addHTML("💥  Allow webcam access first and emojify yourself!  💥", "Don't feel comfortable turning on camera? No worries, here is the Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>. <br/> No funny buisness going on here 😃 <a href='http://www.tamrat.co/rem-emojifier' target='_blank'>Here are some of the example outputs</a> 💯 Created by <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the <a href='https://www.recurse.com/' target='_blank'>Recurse Center</a> 🐙")
              .addElement("", canvas.elt)
              .addButton("💾 Save Photo", saveImage)
-             .addButton("📹 Record GIF", recordGif)
-             .addHTML("Click Record GIF to start/stop recording and link to the gif will appear down here","")
+             .addButton("📹 Start / Stop Recording GIF", recordGif)
+             .addHTML("Start recording GIF and download link will appear here","")
 
  //prepare for gif recording
  setupGif()
@@ -60,6 +60,13 @@ function setupGif() {
     workerScript: '/libraries/gif.worker.js'
   })
 
+  gif.on('progress', function (p) {
+    var percentage = (Math.round(p * 100)) + "%"
+    if(p !== undefined) {
+      mainGui.setHTML("status", "<p style=' color: red; fontSize: 20'> Saving..." + percentage + "</P>")
+    }
+  })
+
   gif.on('finished', function(blob) {
     // window.open(URL.createObjectURL(blob))
     gifBlob = URL.createObjectURL(blob)
@@ -69,9 +76,15 @@ function setupGif() {
 }
 
 function recordGif(){
-  gifRecording = !gifRecording;
-  console.log('gif recording is:', gifRecording);
-  if (!gifRecording) {
+  gifRecording = !gifRecording
+
+  if(mainGui._controls.status) {//ui message
+    mainGui.setHTML("status", "<p style=' color: red; fontSize: 30;'> Recording...</P>")
+  } else {
+    mainGui.addHTML("status", "<p style=' color: red; fontSize: 30;'> Recording...</P>")
+  }
+
+  if (!gifRecording) { //start rendering when button clicked again
     gif.render()
   }
 }
@@ -79,6 +92,7 @@ function recordGif(){
 function displayGif() {
   if(!gifRecording && gifBlob) {
     gifNumber++
+    mainGui.setHTML("status", "<p style=' color: red; fontSize: 30;'> Done! </P>")
     mainGui.addHTML("😎", "<a href='" + gifBlob + "' target='_blank'> Gif Number " + gifNumber + "</a>" )
   }
 
