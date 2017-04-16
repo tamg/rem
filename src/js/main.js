@@ -8,8 +8,9 @@ var emojiPixel
 
 var gif
 var gifRecording = false
-var gifBlob
+var gifBlobUrl
 var gifNumber = 0
+var outputGif
 
 function setup() {
   pixelDensity(1) //disregard retina display
@@ -71,8 +72,8 @@ function setupGif() {
 
   gif.on('finished', function(blob) {
     // window.open(URL.createObjectURL(blob))
-    gifBlob = URL.createObjectURL(blob)
-    displayGif(gifBlob)
+    gifBlobUrl = URL.createObjectURL(blob)
+    displayGif(gifBlobUrl)
     setupGif()
   })
 }
@@ -92,12 +93,15 @@ function recordGif(){
 }
 
 function displayGif() {
-  if(!gifRecording && gifBlob) {
+  if(!gifRecording && gifBlobUrl) {
     gifNumber++
     mainGui.setValue("status", "<p style=' color: red; fontSize: 12'> Done! </P>")
-    mainGui.addHTML("😎", "<a href='" + gifBlob + "' target='_blank'> Gif Number " + gifNumber + "</a>" )
+    if(mainGui._controls.output) { //update ui of current recorded gif
+      mainGui.setValue("output", gifBlobUrl)
+    } else {
+      mainGui.addImage("output", gifBlobUrl)
+    }
   }
-
 }
 
 //p5 draw function called everyframe
