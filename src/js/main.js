@@ -24,7 +24,7 @@ function setup() {
                         .then(accessGranted)
                         .catch(error)
 
-  mainGui = QuickSettings.create(windowWidth/2 - 330, 10, "REM✌🏽")
+  mainGui = QuickSettings.create(windowWidth/2 - 330, 10, "REM😎")
              .setWidth(660)
              .addHTML("💥  Allow webcam access first and emojify yourself!  💥", "Don't feel comfortable turning on camera? No worries, here is the Github <a href='https://github.com/tamg/rem' target='_blank'>link</a>. <br/> No funny buisness going on here 😃 <a href='http://www.tamrat.co/rem-emojifier' target='_blank'>Here are some of the example outputs</a> 💯 Created by <a href='http://tamrat.co' target='_blank'> @tamrrat</a> at the <a href='https://www.recurse.com/' target='_blank'>Recurse Center</a> 🐙")
              .addElement("", canvas.elt)
